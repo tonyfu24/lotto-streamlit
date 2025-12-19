@@ -1,109 +1,219 @@
-import streamlit as st
-import pandas as pd
-import random
-from itertools import combinations
-from collections import Counter
+# -------------------------
+# 匯入需要的套件
+# -------------------------
+import streamlit as st              # Streamlit：用來做網頁介面
+import pandas as pd                 # pandas：讀取與處理 Excel 資料
+import random                       # random：隨機選號、幸運值
+from collections import Counter     # Counter：統計出現次數
+from itertools import combinations  # combinations：計算號碼共現關係
 
-# ===============================
-# 基本設定
-# ===============================
-NUMBER_RANGE = range(1, 50)
-SELECT_NUM = 6
+# -------------------------
+# 設定網頁基本資訊
+# -------------------------
+st.set_page_config(
+    page_title="樂透智慧選號器",
+    page_icon="🎯",
+    layout="centered"
+)
 
-st.set_page_config(page_title="大樂透號碼產生器", page_icon="🎯")
+# -------------------------
+# 網頁標題與說明
+# -------------------------
+st.title("🎯 樂透智慧選號器")
+st.caption("統計理工 × 天選之人｜理性與命運的交會 🤞")
 
-# ===============================
-# 讀取資料
-# ===============================
-@st.cache_data
-def load_data():
-    return pd.read_excel("lotto_history.xlsx")
+# =====================================================
+# Step 1：選擇樂透種類
+# =====================================================
+game_type = st.selectbox(
+    "請選擇樂透玩法",
+    ["大樂透", "威力彩"]
+)
 
-df = load_data()
-numbers_df = df[[f"獎號{i}" for i in range(1, 7)]]
+# =====================================================
+# Step 2：選擇選號模式
+# =====================================================
+mode = st.radio(
+    "🎛️ 選號模式",
+    ["統計理工模式 🧠", "天選之人模式 🔮"]
+)
 
-# ===============================
-# 預先計算頻率與共現（只算一次）
-# ===============================
-@st.cache_data
-def prepare_stats(numbers_df):
-    freq = Counter(numbers_df.values.flatten())
-    max_freq = max(freq.values())
+# =====================================================
+# Step 3：依玩法讀取對應資料
+# =====================================================
+if game_type == "大樂透":
+    # 讀取大樂透歷史資料
+    df = pd.read_excel("lotto_big.xlsx")
 
-    pair_count = Counter()
-    for row in numbers_df.values:
-        for a, b in combinations(sorted(row), 2):
-            pair_count[(a, b)] += 1
+    # 六個主號欄位名稱
+    number_cols = ["獎號1", "獎號2", "獎號3", "獎號4", "獎號5", "獎號6"]
 
-    return freq, max_freq, pair_count
+    # 主號範圍 1~49
+    number_range = range(1, 50)
 
-freq, max_freq, pair_count = prepare_stats(numbers_df)
+    # 大樂透沒有第二區
+    special_range = None
 
-# ===============================
-# 產生號碼函式
-# ===============================
-def generate_numbers(freq_weight, co_weight, noise_range):
+else:
+    # 讀取威力彩歷史資料
+    df = pd.read_excel("lotto_power.xlsx")
+
+    # 六個第一區號碼欄位
+    number_cols = ["獎號1", "獎號2", "獎號3", "獎號4", "獎號5", "獎號6"]
+
+    # 第一區號碼範圍 1~38
+    number_range = range(1, 39)
+
+    # 第二區號碼範圍 1~8
+    special_range = range(1, 9)
+
+# 只留下六個主號，方便後續計算
+numbers_df = df[number_cols]
+
+# =====================================================
+# Step 4：統計歷史出現頻率（只在理工模式使用）
+# =====================================================
+freq_counter = Counter(numbers_df.values.flatten())  # 每個號碼出現次數
+max_freq = max(freq_counter.values())                # 最大出現次數（用來正規化）
+
+# =====================================================
+# Step 5：計算號碼共現關係（兩兩一起出現）
+# =====================================================
+pair_counter = Counter()
+
+for row in numbers_df.values:
+    # 每一期的 6 個號碼，取所有兩兩組合
+    for a, b in combinations(sorted(row), 2):
+        pair_counter[(a, b)] += 1
+
+# 共現次數最大值（避免除以 0）
+max_pair = max(pair_counter.values()) if pair_counter else 1
+
+# =====================================================
+# Step 6：統計理工模式 → 建立權重
+# =====================================================
+def build_weights(freq_w, co_w, noise_range):
+    """
+    建立每個號碼的權重（越大越容易被抽中）
+    """
     weights = {}
 
-    for num in NUMBER_RANGE:
-        freq_w = freq.get(num, 0) / max_freq
-        co_w = sum(
-            pair_count.get(tuple(sorted((num, other))), 0)
-            for other in NUMBER_RANGE if other != num
-        )
+    for num in number_range:
+        # 歷史頻率權重（正規化到 0~1）
+        freq_score = freq_counter.get(num, 0) / max_freq
+
+        # 與其他號碼的共現程度
+        co_score = sum(
+            pair_counter.get((min(num, other), max(num, other)), 0)
+            for other in number_range
+        ) / max_pair
+
+        # 隨機擾動（玄學來源）
         noise = random.uniform(*noise_range)
-        weights[num] = (freq_weight * freq_w + co_weight * co_w) * noise
 
-    total = sum(weights.values())
-    probs = [weights[n] / total for n in NUMBER_RANGE]
+        # 最終權重
+        weights[num] = (freq_w * freq_score + co_w * co_score) * noise
 
-    return sorted(
-        random.choices(
-            population=list(NUMBER_RANGE),
-            weights=probs,
-            k=SELECT_NUM
-        )
-    )
+    return weights
 
-# ===============================
-# UI 介面
-# ===============================
-st.title("🎯 大樂透建議號碼產生器")
+# =====================================================
+# Step 7：依權重產生 6 個不重複號碼
+# =====================================================
+def generate_weighted_numbers(weights):
+    available = list(weights.keys())  # 尚未被選的號碼
+    selected = []
 
-st.markdown("📌 使用歷史資料的 **頻率 + 共現 + 隨機微擾** 模型（非預測）")
+    for _ in range(6):
+        # 依權重隨機抽一個號碼
+        chosen = random.choices(
+            available,
+            weights=[weights[n] for n in available],
+            k=1
+        )[0]
 
-st.sidebar.header("⚙️ 參數設定")
+        selected.append(chosen)
+        available.remove(chosen)  # 移除避免重複
 
-freq_weight = st.sidebar.slider(
-    "歷史頻率權重",
-    0.0, 1.0, 0.6, 0.05
-)
+    return sorted(selected)
 
-co_weight = st.sidebar.slider(
-    "號碼共現權重",
-    0.0, 1.0, 0.2, 0.05
-)
+# =====================================================
+# Step 8：天選之人模式 → 純隨機選號
+# =====================================================
+def generate_random_numbers():
+    # 每個號碼機率完全一樣
+    return sorted(random.sample(list(number_range), 6))
 
-noise_min, noise_max = st.sidebar.slider(
-    "隨機擾動範圍",
-    0.8, 1.2, (0.9, 1.1), 0.01
-)
+# =====================================================
+# Step 9：今日幸運值計算
+# =====================================================
+def luck_score(selected, weights=None):
+    """
+    幸運值不是中獎率，而是『模型偏好程度』
+    """
+    if weights is None:
+        # 天選模式：完全隨機
+        return random.randint(1, 99)
 
-st.sidebar.markdown("---")
-st.sidebar.caption("⚠️ 樂透為隨機機制，本工具僅供娛樂與統計實驗")
+    # 將號碼依權重排序
+    ranked = sorted(weights.items(), key=lambda x: x[1], reverse=True)
 
-# ===============================
-# 產生結果
-# ===============================
-if st.button("🎲 產生建議號碼"):
-    nums = generate_numbers(
-        freq_weight=freq_weight,
-        co_weight=co_weight,
-        noise_range=(noise_min, noise_max)
-    )
+    # 取模型最喜歡的前 30%
+    top_set = set(num for num, _ in ranked[:int(len(ranked) * 0.3)])
 
-    st.success("🎉 本次建議號碼：")
-    st.markdown(
-        f"<h2 style='text-align:center'>{'  '.join(map(str, nums))}</h2>",
-        unsafe_allow_html=True
-    )
+    # 計算選中號碼中，有幾個屬於模型偏好
+    score = sum(1 for n in selected if n in top_set) / len(selected) * 100
+
+    # 加一點隨機抖動
+    score += random.uniform(-5, 5)
+
+    return int(max(1, min(score, 99)))
+
+# =====================================================
+# Step 10：統計理工模式 → 參數滑桿
+# =====================================================
+if mode == "統計理工模式 🧠":
+    st.markdown("### ⚙️ 模型參數設定")
+
+    freq_w = st.slider("歷史頻率權重", 0.0, 1.0, 0.6, 0.05)
+    co_w = st.slider("共現關係權重", 0.0, 1.0, 0.2, 0.05)
+    noise = st.slider("隨機擾動強度", 0.0, 1.0, 0.3, 0.05)
+
+    noise_range = (1 - noise, 1 + noise)
+
+# =====================================================
+# Step 11：按鈕 → 產生建議號碼
+# =====================================================
+if st.button("🎰 產生建議號碼"):
+
+    # 根據模式選擇產號方式
+    if mode == "統計理工模式 🧠":
+        weights = build_weights(freq_w, co_w, noise_range)
+        main_nums = generate_weighted_numbers(weights)
+        luck = luck_score(main_nums, weights)
+    else:
+        main_nums = generate_random_numbers()
+        luck = luck_score(main_nums)
+
+    # 將號碼格式化成 01、02 形式
+    formatted = "、".join(f"{n:02d}" for n in main_nums)
+
+    # 顯示結果
+    st.subheader("🎯 建議號碼")
+
+    if game_type == "威力彩":
+        st.success(f"第一區：{formatted}")
+    else:
+        st.success(formatted)
+
+    # 威力彩第二區
+    if game_type == "威力彩":
+        special = random.choice(list(special_range))
+        st.info(f"第二區：{special}")
+
+    # 顯示幸運值
+    st.markdown(f"### 🍀 今日幸運值：**{luck}%**")
+
+    # 祝賀語
+    st.markdown("### 🎉 祝您中大獎!!")
+
+
