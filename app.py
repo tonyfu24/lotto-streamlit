@@ -148,11 +148,15 @@ def build_weights(freq_w, co_w, noise_range):
 # Step 7：依權重產生 6 個不重複號碼
 # =====================================================
 def generate_weighted_numbers(weights):
-    available = list(weights.keys())  # 尚未被選的號碼
+    available = list(weights.keys())
     selected = []
 
+    total_weight = sum(weights.values())
+    if total_weight <= 0:
+        # 極端情況退回純隨機
+        return sorted(random.sample(available, 6))
+
     for _ in range(6):
-        # 依權重隨機抽一個號碼
         chosen = random.choices(
             available,
             weights=[weights[n] for n in available],
@@ -160,16 +164,10 @@ def generate_weighted_numbers(weights):
         )[0]
 
         selected.append(chosen)
-        available.remove(chosen)  # 移除避免重複
+        available.remove(chosen)
 
     return sorted(selected)
 
-# =====================================================
-# Step 8：天選之人模式 → 純隨機選號
-# =====================================================
-def generate_random_numbers():
-    # 每個號碼機率完全一樣
-    return sorted(random.sample(list(number_range), 6))
 
 # =====================================================
 # Step 9：今日幸運值計算
