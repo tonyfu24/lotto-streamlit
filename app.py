@@ -213,6 +213,13 @@ if mode == "統計理工模式 🧠":
         step=0.05,
         key="co_w"
     )
+
+    noise = st.slider(
+        "隨機擾動強度",
+        0.0, 1.0,
+        step=0.05,
+        key="noise"
+    )
     
     noise_range = (
         1 - st.session_state.noise,
