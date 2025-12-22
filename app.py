@@ -138,7 +138,9 @@ def build_weights(freq_w, co_w, noise_range):
         noise = random.uniform(*noise_range)
 
         # 最終權重
-        weights[num] = (freq_w * freq_score + co_w * co_score) * noise
+        raw_weight = (freq_w * freq_score + co_w * co_score)
+        weights[num] = max(raw_weight * noise, 1e-6)
+
 
     return weights
 
