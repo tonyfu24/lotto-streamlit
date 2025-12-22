@@ -7,6 +7,18 @@ import random                       # random：隨機選號、幸運值
 from collections import Counter     # Counter：統計出現次數
 from itertools import combinations  # combinations：計算號碼共現關係
 
+# =====================================================
+# 模型預設參數（整個 App 的基準設定）
+# =====================================================
+
+DEFAULT_FREQ_WEIGHT = 0.6     # 歷史出現頻率影響程度
+DEFAULT_CO_WEIGHT = 0.2       # 號碼共現關係影響程度
+DEFAULT_NOISE = 0.3           # 隨機擾動強度（玄學成分）
+
+# 隨機擾動實際使用的範圍
+DEFAULT_NOISE_RANGE = (1 - DEFAULT_NOISE, 1 + DEFAULT_NOISE)
+
+
 # -------------------------
 # 設定網頁基本資訊
 # -------------------------
@@ -175,9 +187,26 @@ def luck_score(selected, weights=None):
 if mode == "統計理工模式 🧠":
     st.markdown("### ⚙️ 模型參數設定")
 
-    freq_w = st.slider("歷史頻率權重", 0.0, 1.0, 0.6, 0.05)
-    co_w = st.slider("共現關係權重", 0.0, 1.0, 0.2, 0.05)
-    noise = st.slider("隨機擾動強度", 0.0, 1.0, 0.3, 0.05)
+    freq_w = st.slider(
+    "歷史頻率權重",
+    0.0, 1.0,
+    DEFAULT_FREQ_WEIGHT,
+    0.05
+    )
+
+    co_w = st.slider(
+        "共現關係權重",
+        0.0, 1.0,
+        DEFAULT_CO_WEIGHT,
+        0.05
+    )
+
+    noise = st.slider(
+        "隨機擾動強度",
+        0.0, 1.0,
+        DEFAULT_NOISE,
+        0.05
+    )
 
     noise_range = (1 - noise, 1 + noise)
 
