@@ -262,25 +262,29 @@ else:
     st.warning("⚙️ 目前使用：**自訂參數**")
 
 
-
 # =====================================================
-# Step 11：按鈕 → 產生建議號碼
+# Step 11：按鈕 → 產生建議號碼（修正版）
 # =====================================================
 if st.button("🎰 產生建議號碼"):
 
-    # 根據模式選擇產號方式
     if mode == "統計理工模式 🧠":
-        weights = build_weights(freq_w, co_w, noise_range)
+        weights = build_weights(
+            st.session_state.freq_w,
+            st.session_state.co_w,
+            (
+                1 - st.session_state.noise,
+                1 + st.session_state.noise
+            )
+        )
         main_nums = generate_weighted_numbers(weights)
         luck = luck_score(main_nums, weights)
+
     else:
         main_nums = generate_random_numbers()
         luck = luck_score(main_nums)
 
-    # 將號碼格式化成 01、02 形式
     formatted = "、".join(f"{n:02d}" for n in main_nums)
 
-    # 顯示結果
     st.subheader("🎯 建議號碼")
 
     if game_type == "威力彩":
@@ -288,15 +292,9 @@ if st.button("🎰 產生建議號碼"):
     else:
         st.success(formatted)
 
-    # 威力彩第二區
     if game_type == "威力彩":
         special = random.choice(list(special_range))
         st.info(f"第二區：{special}")
 
-    # 顯示幸運值
     st.markdown(f"### 🍀 今日幸運值：**{luck}%**")
-
-    # 祝賀語
     st.markdown("### 🎉 祝您中大獎!!")
-
-
