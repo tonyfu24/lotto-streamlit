@@ -243,23 +243,23 @@ if mode == "統計理工模式 🧠":
     )
 
     
-if st.button("🔁 恢復官方推薦參數"):
-    st.session_state.freq_w = DEFAULT_FREQ_WEIGHT
-    st.session_state.co_w = DEFAULT_CO_WEIGHT
-    st.session_state.noise = DEFAULT_NOISE
+# if st.button("🔁 恢復官方推薦參數"):
+#     st.session_state.freq_w = DEFAULT_FREQ_WEIGHT
+#     st.session_state.co_w = DEFAULT_CO_WEIGHT
+#     st.session_state.noise = DEFAULT_NOISE
 
-    st.success("已恢復為官方推薦參數 ✨")
+#     st.success("已恢復為官方推薦參數 ✨")
 
-is_default = (
-    st.session_state.freq_w == DEFAULT_FREQ_WEIGHT and
-    st.session_state.co_w == DEFAULT_CO_WEIGHT and
-    st.session_state.noise == DEFAULT_NOISE
-)
+# is_default = (
+#     st.session_state.freq_w == DEFAULT_FREQ_WEIGHT and
+#     st.session_state.co_w == DEFAULT_CO_WEIGHT and
+#     st.session_state.noise == DEFAULT_NOISE
+# )
 
-if is_default:
-    st.info("📌 目前使用：**官方推薦參數**")
-else:
-    st.warning("⚙️ 目前使用：**自訂參數**")
+# if is_default:
+#     st.info("📌 目前使用：**官方推薦參數**")
+# else:
+#     st.warning("⚙️ 目前使用：**自訂參數**")
 
 
 # =====================================================
