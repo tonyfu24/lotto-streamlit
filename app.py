@@ -28,6 +28,19 @@ st.set_page_config(
     layout="centered"
 )
 
+# =====================================================
+# 初始化 Session State（只在第一次載入時執行）
+# =====================================================
+
+if "freq_w" not in st.session_state:
+    st.session_state.freq_w = DEFAULT_FREQ_WEIGHT
+
+if "co_w" not in st.session_state:
+    st.session_state.co_w = DEFAULT_CO_WEIGHT
+
+if "noise" not in st.session_state:
+    st.session_state.noise = DEFAULT_NOISE
+
 # -------------------------
 # 網頁標題與說明
 # -------------------------
@@ -188,27 +201,43 @@ if mode == "統計理工模式 🧠":
     st.markdown("### ⚙️ 模型參數設定")
 
     freq_w = st.slider(
-    "歷史頻率權重",
-    0.0, 1.0,
-    DEFAULT_FREQ_WEIGHT,
-    0.05
+        "歷史頻率權重",
+        0.0, 1.0,
+        step=0.05,
+        key="freq_w"
     )
 
     co_w = st.slider(
         "共現關係權重",
         0.0, 1.0,
-        DEFAULT_CO_WEIGHT,
-        0.05
+        step=0.05,
+        key="co_w"
     )
-
-    noise = st.slider(
-        "隨機擾動強度",
-        0.0, 1.0,
-        DEFAULT_NOISE,
-        0.05
+    
+    noise_range = (
+        1 - st.session_state.noise,
+        1 + st.session_state.noise
     )
+    
+if st.button("🔁 恢復官方推薦參數"):
+    st.session_state.freq_w = DEFAULT_FREQ_WEIGHT
+    st.session_state.co_w = DEFAULT_CO_WEIGHT
+    st.session_state.noise = DEFAULT_NOISE
 
-    noise_range = (1 - noise, 1 + noise)
+    st.success("已恢復為官方推薦參數 ✨")
+
+is_default = (
+    st.session_state.freq_w == DEFAULT_FREQ_WEIGHT and
+    st.session_state.co_w == DEFAULT_CO_WEIGHT and
+    st.session_state.noise == DEFAULT_NOISE
+)
+
+if is_default:
+    st.info("📌 目前使用：**官方推薦參數**")
+else:
+    st.warning("⚙️ 目前使用：**自訂參數**")
+
+
 
 # =====================================================
 # Step 11：按鈕 → 產生建議號碼
