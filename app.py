@@ -14,7 +14,7 @@ from datetime import datetime, timedelta  # datetime:處理日期篩選
 
 DEFAULT_FREQ_WEIGHT = 0.6     # 歷史出現頻率影響程度
 DEFAULT_CO_WEIGHT = 0.2       # 號碼共現關係影響程度
-DEFAULT_NOISE = 0.2           # 隨機擾動強度
+DEFAULT_NOISE = 0.5           # 隨機擾動強度(玄學成分)
 
 # 隨機擾動實際使用的範圍
 DEFAULT_NOISE_RANGE = (1 - DEFAULT_NOISE, 1 + DEFAULT_NOISE)
@@ -145,6 +145,11 @@ if mode == "統計理工模式 🧠":
             # 篩選大於等於起始年份的資料
             df = df_full[df_full["年份"] >= cutoff_year].copy()
             
+            # 取得實際使用的年份範圍(用於顯示)
+            actual_start_year = df["年份"].min()
+            actual_end_year = df["年份"].max()
+            year_range_text = f"{actual_start_year}-{actual_end_year}年"
+            
             # 移除暫時欄位
             df = df.drop(columns=["年份"])
         else:
@@ -152,14 +157,16 @@ if mode == "統計理工模式 🧠":
             total_rows = len(df_full)
             keep_rows = int(total_rows * (years_option / 15))
             df = df_full.tail(keep_rows).copy()
+            year_range_text = f"近{years_option}年"
     else:
         df = df_full.copy()
+        year_range_text = "全部年份"
     
     # 只留下六個主號,方便後續計算
     numbers_df = df[number_cols]
     
-    # 顯示使用的資料筆數
-    st.info(f"📊 使用 **{len(numbers_df)}** 期開獎資料進行分析")
+    # 顯示使用的資料期數和年份範圍
+    st.info(f"📊 使用 **{year_range_text}** 開獎資料進行分析 (共 **{len(numbers_df)}** 期)")
     
     freq_w = st.slider(
         "📊 歷史頻率權重",
