@@ -131,10 +131,13 @@ if mode == "統計理工模式 🧠":
     
     # 根據選擇篩選資料
     if years_option != "全部":
-        # 使用「期別」欄位篩選(格式: YYYXXXXX, 例如 114000086)
+        # 使用「期別」欄位篩選(格式: YYYXXXXX, 例如 114000086 或 097000001)
         if "期別" in df_full.columns:
-            # 將期別轉為字串並取前3碼當作民國年
-            df_full["年份"] = df_full["期別"].astype(str).str[:3].astype(int)
+            # 將期別轉為字串,並補足到9位數(前面補0)
+            df_full["期別_str"] = df_full["期別"].astype(str).str.zfill(9)
+            
+            # 取前3碼當作民國年
+            df_full["年份"] = df_full["期別_str"].str[:3].astype(int)
             
             # 取得最新一期的年份
             latest_year = df_full["年份"].max()
@@ -151,7 +154,7 @@ if mode == "統計理工模式 🧠":
             year_range_text = f"{actual_start_year}-{actual_end_year}年"
             
             # 移除暫時欄位
-            df = df.drop(columns=["年份"])
+            df = df.drop(columns=["年份", "期別_str"])
         else:
             # 如果沒有期別欄位,就按比例保留最近的資料(備用方案)
             total_rows = len(df_full)
