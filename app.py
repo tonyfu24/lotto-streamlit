@@ -12,7 +12,7 @@ from datetime import datetime, timedelta  # datetime:處理日期篩選
 # 模型預設參數(整個 App 的基準設定)
 # =====================================================
 
-DEFAULT_FREQ_WEIGHT = 0.6     # 歷史出現頻率影響程度
+DEFAULT_FREQ_WEIGHT = 0.8     # 歷史出現頻率影響程度
 DEFAULT_CO_WEIGHT = 0.2       # 號碼共現關係影響程度
 DEFAULT_NOISE = 0.5           # 隨機擾動強度(玄學成分)
 
