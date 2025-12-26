@@ -14,7 +14,7 @@ from datetime import datetime, timedelta  # datetime:處理日期篩選
 
 DEFAULT_FREQ_WEIGHT = 0.6     # 歷史出現頻率影響程度
 DEFAULT_CO_WEIGHT = 0.2       # 號碼共現關係影響程度
-DEFAULT_NOISE = 0.3           # 隨機擾動強度(玄學成分)
+DEFAULT_NOISE = 0.2           # 隨機擾動強度
 
 # 隨機擾動實際使用的範圍
 DEFAULT_NOISE_RANGE = (1 - DEFAULT_NOISE, 1 + DEFAULT_NOISE)
